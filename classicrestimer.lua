@@ -1,4 +1,6 @@
-local function Round(num, numDecimalPlaces)
+local ClassicResTimer = CreateFrame('frame', 'resframe', UIParent)
+
+function ClassicResTimer.Round(num, numDecimalPlaces)
 	if numDecimalPlaces and numDecimalPlaces>0 then
 		local mult = 10^numDecimalPlaces
 		return math.floor(num * mult + 0.5) / mult
@@ -7,7 +9,7 @@ local function Round(num, numDecimalPlaces)
 end
   
 
-local function Split(s, sep)
+function ClassicResTimer.Split(s, sep)
     local fields = {}
     
     local sep = sep or " "
@@ -17,7 +19,7 @@ local function Split(s, sep)
     return fields
 end
 
-function OnUpdate(self, elapsed)
+function ClassicResTimer.OnUpdate(self, elapsed)
 	self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
 	local zone = GetZoneText()
 	if not self.zones[zone] then
@@ -68,8 +70,8 @@ function OnUpdate(self, elapsed)
 				-- self.timestr:SetText(string.format("%s Now", k))
 				output = output .. string.format("%s Now", prettyname)
 			else
-				-- self.timestr:SetText(string.format("%s in %00.0f", k, Round(self.timeleft[k]), 0))
-				output = output .. string.format("%s in %00.0f", prettyname, Round(self.timeleft[k]), 0)
+				-- self.timestr:SetText(string.format("%s in %00.0f", k, self.Round(self.timeleft[k]), 0))
+				output = output .. string.format("%s in %00.0f", prettyname, self.Round(self.timeleft[k]), 0)
 			end
 			count = count + 1
 		end
@@ -81,7 +83,7 @@ function OnUpdate(self, elapsed)
 	self.TimeSinceLastUpdate = 0.0
 end
 
-function OnEvent(self, event, ...)
+function ClassicResTimer.OnEvent(self, event, ...)
 	if event == "CHAT_MSG_ADDON" then
 		if (select(1,...) == self.AddonPrefix) then
 			local sender = select(5,...)
@@ -89,7 +91,7 @@ function OnEvent(self, event, ...)
 				return
 			end
 			local str = ""..select(2,...)
-			local splitstr = Split(str, ":")
+			local splitstr = self.Split(str, ":")
 			local subzone = splitstr[1]
 			local timeleft = splitstr[2]
 			
@@ -156,7 +158,7 @@ function OnEvent(self, event, ...)
 	end
 end
 
-function Reset(self)
+function ClassicResTimer.Reset(self)
 	local zone = GetZoneText()
 	if (self.zones[zone]) then
 		self.timeleft = { }
@@ -168,68 +170,80 @@ function Reset(self)
 		end
 		
 		self:Show()
-		self:SetScript('OnUpdate', OnUpdate)
+		self:SetScript('OnUpdate', self.OnUpdate)
 	else
 		self:Hide()
 	end 
 end
 
-local ResTimerClassic = CreateFrame('frame', 'resframe', UIParent)
--- ResTimerClassic:SetBackdrop({
+function ClassicResTimer.SlashCmd(self)
+	local zone = GetZoneText()
+	if (self.zones[zone]) then
+		print("ClassicResTimer active, syncing with " .. #self.reporting .. " players")
+		for k, v in pairs(self.reporting) do
+			print(k)
+		end
+	else
+		print("ClassicResTimer inactive")
+	end
+end
+
+
+--ClassicResTimer:SetBackdrop({
 --	bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
 --	edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
 --	tile=1, tileSize=32, edgeSize=32,
 --	insets={left=10, right=10, top=10, bottom=10}
 --  })
-ResTimerClassic:SetWidth(200)
-ResTimerClassic:SetHeight(45)
-ResTimerClassic:SetPoint("CENTER",0,0)
-ResTimerClassic:EnableMouse(true)
-ResTimerClassic:SetMovable(true)
-ResTimerClassic:Show()
-ResTimerClassic:RegisterForDrag("LeftButton")
-ResTimerClassic:SetScript("OnDragStart", function(self) self:StartMoving() end)
-ResTimerClassic:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+ClassicResTimer:SetWidth(200)
+ClassicResTimer:SetHeight(45)
+ClassicResTimer:SetPoint("CENTER",0,0)
+ClassicResTimer:EnableMouse(true)
+ClassicResTimer:SetMovable(true)
+ClassicResTimer:Show()
+ClassicResTimer:RegisterForDrag("LeftButton")
+ClassicResTimer:SetScript("OnDragStart", function(self) self:StartMoving() end)
+ClassicResTimer:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
 
 
-ResTimerClassic.timestr = ResTimerClassic:CreateFontString("CFontString")
-ResTimerClassic.timestr:SetFontObject(GameFontNormalSmall)
-ResTimerClassic.timestr:SetPoint("TOP", ResTimerClassic, "TOP", 0, 15)
-ResTimerClassic.timestr:SetWidth(ResTimerClassic:GetWidth())
-ResTimerClassic.timestr:SetHeight(ResTimerClassic:GetHeight())
-ResTimerClassic.timestr:SetText("")
--- ResTimerClassic.timestr:SetTextColor(1,1,1)
+ClassicResTimer.timestr = ClassicResTimer:CreateFontString("CFontString")
+ClassicResTimer.timestr:SetFontObject(GameFontNormalSmall)
+ClassicResTimer.timestr:SetPoint("TOP", ClassicResTimer, "TOP", 0, 15)
+ClassicResTimer.timestr:SetWidth(ClassicResTimer:GetWidth())
+ClassicResTimer.timestr:SetHeight(ClassicResTimer:GetHeight())
+ClassicResTimer.timestr:SetText("")
+-- ClassicResTimer.timestr:SetTextColor(1,1,1)
 
-ResTimerClassic:SetScript('OnEvent', OnEvent)
-ResTimerClassic:SetScript('OnUpdate', OnUpdate)
-ResTimerClassic.Reset = Reset
-ResTimerClassic:RegisterEvent('CHAT_MSG_ADDON')
-ResTimerClassic:RegisterEvent('CHAT_MSG_BG_SYSTEM_NEUTRAL')
-ResTimerClassic:RegisterEvent('CHAT_MSG_BG_SYSTEM_ALLIANCE')
-ResTimerClassic:RegisterEvent('CHAT_MSG_BG_SYSTEM_HORDE')
-ResTimerClassic:RegisterEvent('ZONE_CHANGED_NEW_AREA')
-ResTimerClassic:RegisterEvent('ADDON_LOADED')
+ClassicResTimer:SetScript('OnEvent', ClassicResTimer.OnEvent)
+ClassicResTimer:SetScript('OnUpdate', ClassicResTimer.OnUpdate)
+-- ClassicResTimer.Reset = Reset
+ClassicResTimer:RegisterEvent('CHAT_MSG_ADDON')
+ClassicResTimer:RegisterEvent('CHAT_MSG_BG_SYSTEM_NEUTRAL')
+ClassicResTimer:RegisterEvent('CHAT_MSG_BG_SYSTEM_ALLIANCE')
+ClassicResTimer:RegisterEvent('CHAT_MSG_BG_SYSTEM_HORDE')
+ClassicResTimer:RegisterEvent('ZONE_CHANGED_NEW_AREA')
+ClassicResTimer:RegisterEvent('ADDON_LOADED')
 
 
-ResTimerClassic.AddonPrefix = "rtc"
-C_ChatInfo.RegisterAddonMessagePrefix(ResTimerClassic.AddonPrefix);
-ResTimerClassic.TimeSinceLastUpdate = 0.0
-ResTimerClassic.ResInterval = 31.44
-ResTimerClassic.UpdateInterval = 0.5
-ResTimerClassic.maxres = 30
+ClassicResTimer.AddonPrefix = "crt"
+C_ChatInfo.RegisterAddonMessagePrefix(ClassicResTimer.AddonPrefix);
+ClassicResTimer.TimeSinceLastUpdate = 0.0
+ClassicResTimer.ResInterval = 31.44
+ClassicResTimer.UpdateInterval = 0.5
+ClassicResTimer.maxres = 30
 
-ResTimerClassic.zones = {
+ClassicResTimer.zones = {
     ["Alterac Valley"] = true,
 	["Warsong Gulch"] = true,
 	["Arathi Basin"] = true
 }
 
-ResTimerClassic.factionmatch = {
+ClassicResTimer.factionmatch = {
 	["CHAT_MSG_BG_SYSTEM_ALLIANCE"] = "Alliance",
 	["CHAT_MSG_BG_SYSTEM_HORDE"] = "Horde"
 }
 
-ResTimerClassic.graveyardmatch = {
+ClassicResTimer.graveyardmatch = {
 	["Arathi Basin"] = {
 		["the stables"] = "Stables",
 		["the lumber mill"] = "Lumber Mill",
@@ -248,40 +262,40 @@ ResTimerClassic.graveyardmatch = {
 	}
 }
 
-ResTimerClassic.timeleft = { }
-ResTimerClassic.lastlost = { }
-ResTimerClassic.lastsync = { }
-ResTimerClassic.reporting = { }
+ClassicResTimer.timeleft = { }
+ClassicResTimer.lastlost = { }
+ClassicResTimer.lastsync = { }
+ClassicResTimer.reporting = { }
 
-ResTimerClassic.initialgraveyards = {
+ClassicResTimer.initialgraveyards = {
 	["Warsong Gulch"] = {
 		["Alliance"] = {
-			["Silverwing Hold"] = ResTimerClassic.ResInterval
+			["Silverwing Hold"] = ClassicResTimer.ResInterval
 		},
 		["Horde"] = {
-			["Warsong Lumber Mill"] = ResTimerClassic.ResInterval
+			["Warsong Lumber Mill"] = ClassicResTimer.ResInterval
 		}
 	},
 	["Arathi Basin"] = {
 		["Alliance"] = {
-			["Trollbane Hall"] = ResTimerClassic.ResInterval
+			["Trollbane Hall"] = ClassicResTimer.ResInterval
 		 },
 		["Horde"] = {
-			["Defiler's Den"] = ResTimerClassic.ResInterval
+			["Defiler's Den"] = ClassicResTimer.ResInterval
 		 }
 	},
 	["Alterac Valley"] = {
 		["Alliance"] = {
-			[""] = ResTimerClassic.ResInterval,
-			["Stormpike Graveyard"] = ResTimerClassic.ResInterval,
-			["Stonehearth Graveyard"] = ResTimerClassic.ResInterval,
-			["Dun Baldar"] = ResTimerClassic.ResInterval,
+			[""] = ClassicResTimer.ResInterval,
+			["Stormpike Graveyard"] = ClassicResTimer.ResInterval,
+			["Stonehearth Graveyard"] = ClassicResTimer.ResInterval,
+			["Dun Baldar"] = ClassicResTimer.ResInterval,
 		 },
 		["Horde"] = { }
 	}
 }
 
-ResTimerClassic.prettynames = {
+ClassicResTimer.prettynames = {
 	["Alterac Valley"] = {
 		[""] = "Dun Baldar Pass",
 		["Dun Baldar"] = "Stormpike Aid Station",
@@ -291,8 +305,11 @@ ResTimerClassic.prettynames = {
 	["Warsong Gulch"] = { }
 }
 
-ResTimerClassic.startText = {
+ClassicResTimer.startText = {
 	["The Battle for Alterac Valley has begun!"] = 5,
 	["The Battle for Arathi Basin has begun!"] = 5,
     ["Let the battle for Warsong Gulch begin!"] = 5,
 }
+
+SlashCmdList["ClassicResTimer"] = function(self) ClassicResTimer.SlashCmd(ClassicResTimer) end
+SLASH_ClassicResTimer1 = "/crt"
