@@ -1,0 +1,5 @@
+## Interface: 11305
+## Title: ClassicResTimer
+## Notes: Displays Res Timers in BG's
+## SavedVariablesPerCharacter: rtdb
+classicrestimer.lua
