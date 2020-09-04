@@ -96,7 +96,7 @@ function ClassicResTimer.OnEvent(self, event, ...)
 			local timeleft = splitstr[2]
 			
 			-- zone = "Warsong Gulch"
-			if (self.zones[zone] and (self.lastlost[subzone] or 0) > 2) then
+			if (self.zones[zone] and (self.lastlost[subzone] or 0) > 2) and (GetTime() - (self.lastsync or 0) > 1) then
 				timeleft = tonumber(timeleft)
 				self.timeleft[subzone] = timeleft
 				self.reporting[sender] = true
@@ -158,8 +158,19 @@ function ClassicResTimer.OnEvent(self, event, ...)
 	end
 end
 
+function ClassicResTimer.UpdatePosition(self)
+	local zone = GetZoneText()
+	if (self.zones[zone]) then
+		local pos = self.defaultpos[zone]
+		if pos then
+			self:SetPoint("TOP", UIParent, "TOP", pos['x'], pos['y'])
+		end
+	end
+end
+
 function ClassicResTimer.Reset(self)
 	local zone = GetZoneText()
+	self.UpdatePosition(self)
 	if (self.zones[zone]) then
 		self.timeleft = { }
 		self.lastlost = { }
@@ -176,9 +187,10 @@ function ClassicResTimer.Reset(self)
 	end 
 end
 
-function ClassicResTimer.SlashCmd(self)
+function ClassicResTimer.SlashCmd(self, ...)
 	local zone = GetZoneText()
 	if (self.zones[zone]) then
+		self.UpdatePosition(self)
 		print("ClassicResTimer active, syncing with " .. #self.reporting .. " players")
 		for k, v in pairs(self.reporting) do
 			print(k)
@@ -197,7 +209,7 @@ end
 --  })
 ClassicResTimer:SetWidth(200)
 ClassicResTimer:SetHeight(45)
-ClassicResTimer:SetPoint("CENTER",0,0)
+ClassicResTimer:SetPoint("TOP", UIParent, "TOP", 0, 8)
 ClassicResTimer:EnableMouse(true)
 ClassicResTimer:SetMovable(true)
 ClassicResTimer:Show()
@@ -208,7 +220,7 @@ ClassicResTimer:SetScript("OnDragStop", function(self) self:StopMovingOrSizing()
 
 ClassicResTimer.timestr = ClassicResTimer:CreateFontString("CFontString")
 ClassicResTimer.timestr:SetFontObject(GameFontNormalSmall)
-ClassicResTimer.timestr:SetPoint("TOP", ClassicResTimer, "TOP", 0, 15)
+ClassicResTimer.timestr:SetPoint("TOP", ClassicResTimer, "TOP", 0, 0)
 ClassicResTimer.timestr:SetWidth(ClassicResTimer:GetWidth())
 ClassicResTimer.timestr:SetHeight(ClassicResTimer:GetHeight())
 ClassicResTimer.timestr:SetText("")
@@ -231,6 +243,12 @@ ClassicResTimer.TimeSinceLastUpdate = 0.0
 ClassicResTimer.ResInterval = 31.44
 ClassicResTimer.UpdateInterval = 0.5
 ClassicResTimer.maxres = 30
+
+ClassicResTimer.defaultpos = {
+	["Alterac Valley"] = {['x'] = 0, ['y'] = 0},
+	["Warsong Gulch"] = {['x'] = 0, ['y'] = -45},
+	["Arathi Basin"] = {['x'] = 0, ['y'] = -45},
+}
 
 ClassicResTimer.zones = {
     ["Alterac Valley"] = true,
@@ -311,5 +329,5 @@ ClassicResTimer.startText = {
     ["Let the battle for Warsong Gulch begin!"] = 5,
 }
 
-SlashCmdList["ClassicResTimer"] = function(self) ClassicResTimer.SlashCmd(ClassicResTimer) end
+SlashCmdList["ClassicResTimer"] = function(self, ...) ClassicResTimer.SlashCmd(ClassicResTimer, ...) end
 SLASH_ClassicResTimer1 = "/crt"
