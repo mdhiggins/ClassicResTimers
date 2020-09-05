@@ -128,15 +128,17 @@ function ClassicResTimer.OnEvent(self, event, ...)
 			local subzone = splitstr[1]
 			local timeleft = splitstr[2]
 			-- zone = "Warsong Gulch"
-			if (self.zones[zone] and (GetTime() - (self.lastsync[subzone] or 0) > 1)) then
+			if (GetAreaSpiritHealerTime() > 0 and subzone == GetSubZoneText()) then
+				-- already dead at this location, ignore
+			elseif (self.zones[zone] and (GetTime() - (self.lastsync[subzone] or 0) > 1)) then
 				if (GetTime() - (self.lastlost[subzone] or 0)) < 2 then
-					print("Ignoring sync, node was just lost")
+					--print("Ignoring sync, node was just lost")
 				else 
 					timeleft = tonumber(timeleft)
 					self.timeleft[subzone] = timeleft
 					self.reporting[sender] = true
 					self.lastsync[subzone] = GetTime()
-					print("Chat event sync received from " .. sender .. ": " .. timeleft .. " for " .. subzone)
+					--print("Chat event sync received from " .. sender .. ": " .. timeleft .. " for " .. subzone)
 				end
 			end
 		end
