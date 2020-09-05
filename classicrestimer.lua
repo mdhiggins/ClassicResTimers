@@ -122,18 +122,22 @@ function ClassicResTimer.OnEvent(self, event, ...)
 			if sender == UnitName("Player") then
 				return
 			end
+			local zone = GetZoneText()
 			local str = ""..select(2,...)
 			local splitstr = self.Split(str, ":")
 			local subzone = splitstr[1]
 			local timeleft = splitstr[2]
-			
 			-- zone = "Warsong Gulch"
-			if (self.zones[zone] and (self.lastlost[subzone] or 0) > 2) and (GetTime() - (self.lastsync or 0) > 1) then
-				timeleft = tonumber(timeleft)
-				self.timeleft[subzone] = timeleft
-				self.reporting[sender] = true
-				self.lastsync[subzone] = GetTime()
-				print("Chat event sync received from " .. sender .. ": " .. timeleft .. " for " .. subzone)
+			if (self.zones[zone] and (GetTime() - (self.lastsync[subzone] or 0) > 1)) then
+				if (GetTime() - (self.lastlost[subzone] or 0)) < 2 then
+					print("Ignoring sync, node was just lost")
+				else 
+					timeleft = tonumber(timeleft)
+					self.timeleft[subzone] = timeleft
+					self.reporting[sender] = true
+					self.lastsync[subzone] = GetTime()
+					print("Chat event sync received from " .. sender .. ": " .. timeleft .. " for " .. subzone)
+				end
 			end
 		end
 
