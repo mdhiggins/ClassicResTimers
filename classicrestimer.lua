@@ -20,7 +20,7 @@ function ClassicResTimer.Split(s, sep)
 end
 
 function ClassicResTimer.OnUpdate(self, elapsed)
-	self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed;
+	self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
 	local zone = GetZoneText()
 	if not self.zones[zone] then
 		self.timestr:SetText("")
@@ -47,14 +47,22 @@ function ClassicResTimer.OnUpdate(self, elapsed)
 				print("Estimate was off by " .. adjustment)
 			end
 			self.timeleft[subzone] = time
-			C_ChatInfo.SendAddonMessage(self.AddonPrefix, subzone .. ":" ..time, "INSTANCE_CHAT");
+			C_ChatInfo.SendAddonMessage(self.AddonPrefix, subzone .. ":" ..time, "INSTANCE_CHAT")
 		end
 
+--		local currentdead = CurrentDeadCounts(self)
 		for k, v in pairs(self.timeleft) do
-			if (time > 0 and k == subzone) then
+			if (time > 0 and k == subzone and (self.timeleft[k] or 0) > 1) then
 				-- pass
+--			elseif ((self.lastdead[k] or 0) - (currentdead[k] or 0)) > 1 then
+--				print("Res wave detected for " .. k .. " went from " .. (self.lastdead[k] or 0).. " to " .. (currentdead[k] or 0))
+--				if ((self.timeleft[k] or 0) > 1 and (self.timeleft[k] or 0) < 30) then
+--					self.timeleft[k] = self.ResInterval
+--				else
+--					self.timeleft[k] = self.timeleft[k] - self.TimeSinceLastUpdate
+--				end
 			else
-				self.timeleft[k] = self.timeleft[k] - self.TimeSinceLastUpdate;
+				self.timeleft[k] = self.timeleft[k] - self.TimeSinceLastUpdate
 			end
 
 			if self.timeleft[k] < 0 then
@@ -75,6 +83,7 @@ function ClassicResTimer.OnUpdate(self, elapsed)
 			end
 			count = count + 1
 		end
+		--self.lastdead = currentdead
 		self.timestr:SetText(output)
 		self:SetHeight(42 + (12 * count))
 		self.timestr:SetHeight(self:GetHeight())
@@ -83,10 +92,33 @@ function ClassicResTimer.OnUpdate(self, elapsed)
 	self.TimeSinceLastUpdate = 0.0
 end
 
+function CurrentDeadCounts(self)
+	local zone = GetZoneText()
+	members = GetNumGroupMembers("LE_PARTY_CATEGORY_INSTANCE")
+	graveyardcounts = { }
+	for raidIndex = 0, members, 1 do
+		local name, rank, subgroup, level, class, fileName, subzone, online, dead, role, isML = GetRaidRosterInfo(raidIndex)
+
+		if name and self.lastzone then
+			if subzone and zone ~= subzone then
+				self.lastzone[name] = subzone
+				-- print("Cached zone for " .. name .. ": " .. subzone)
+			elseif self.lastzone and self.lastzone[name] then
+				subzone = self.lastzone[name]
+				-- print("Cached zone for " .. name .. ": " .. subzone)
+			end
+			if self.timeleft[subzone] and dead then
+				graveyardcounts[subzone] = (graveyardcounts[subzone] or 0) + 1
+			end
+		end
+	end
+	return graveyardcounts
+end
+
 function ClassicResTimer.OnEvent(self, event, ...)
 	if event == "CHAT_MSG_ADDON" then
+		local sender = select(5,...)
 		if (select(1,...) == self.AddonPrefix) then
-			local sender = select(5,...)
 			if sender == UnitName("Player") then
 				return
 			end
@@ -104,9 +136,8 @@ function ClassicResTimer.OnEvent(self, event, ...)
 				print("Chat event sync received from " .. sender .. ": " .. timeleft .. " for " .. subzone)
 			end
 		end
-	end
 
-	if (event == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
+	elseif (event == "CHAT_MSG_BG_SYSTEM_NEUTRAL") then
 		local message = select(1, ...)
 		local startOffset = self.startText[message]
 		if (startOffset ~= nil) then
@@ -114,9 +145,8 @@ function ClassicResTimer.OnEvent(self, event, ...)
 				self.timeleft[k] = self.ResInterval + startOffset
 			end
         end
-	end
 
-	if (event == "CHAT_MSG_BG_SYSTEM_ALLIANCE" or event == "CHAT_MSG_BG_SYSTEM_HORDE") then
+	elseif (event == "CHAT_MSG_BG_SYSTEM_ALLIANCE" or event == "CHAT_MSG_BG_SYSTEM_HORDE") then
 		local message = select(1, ...)
 		local zone = GetZoneText()
 		local messageFaction = self.factionmatch[event]
@@ -144,13 +174,11 @@ function ClassicResTimer.OnEvent(self, event, ...)
 				end
 			end
 		end
-	end
 
-	if event == "ZONE_CHANGED_NEW_AREA" then
+	elseif event == "ZONE_CHANGED_NEW_AREA" then
 		self.Reset(self)
-	end
 	
-	if event == "ADDON_LOADED" then
+	elseif event == "ADDON_LOADED" then
 		local message = select(1, ...)
 		if message == "ClassicResTimer" then
 			self.Reset(self)
@@ -175,6 +203,8 @@ function ClassicResTimer.Reset(self)
 		self.timeleft = { }
 		self.lastlost = { }
 		self.reporting = { }
+		--self.lastdead = { }
+		--self.lastzone = { }
 		local faction = UnitFactionGroup("Player")
 		for k, v in pairs(self.initialgraveyards[zone][faction]) do
 			self.timeleft[k] = v
@@ -236,9 +266,8 @@ ClassicResTimer:RegisterEvent('CHAT_MSG_BG_SYSTEM_HORDE')
 ClassicResTimer:RegisterEvent('ZONE_CHANGED_NEW_AREA')
 ClassicResTimer:RegisterEvent('ADDON_LOADED')
 
-
 ClassicResTimer.AddonPrefix = "crt"
-C_ChatInfo.RegisterAddonMessagePrefix(ClassicResTimer.AddonPrefix);
+C_ChatInfo.RegisterAddonMessagePrefix(ClassicResTimer.AddonPrefix)
 ClassicResTimer.TimeSinceLastUpdate = 0.0
 ClassicResTimer.ResInterval = 31.44
 ClassicResTimer.UpdateInterval = 0.5
@@ -284,6 +313,8 @@ ClassicResTimer.timeleft = { }
 ClassicResTimer.lastlost = { }
 ClassicResTimer.lastsync = { }
 ClassicResTimer.reporting = { }
+--ClassicResTimer.lastdead = { }
+--ClassicResTimer.lastzone = { }
 
 ClassicResTimer.initialgraveyards = {
 	["Warsong Gulch"] = {
