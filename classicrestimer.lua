@@ -141,16 +141,27 @@ function ClassicResTimer.OnEvent(self, event, ...)
 			end
 		end
 
-	elseif (event == "CHAT_MSG_BG_SYSTEM_ALLIANCE" or event == "CHAT_MSG_BG_SYSTEM_HORDE") then
+	elseif (event == "CHAT_MSG_BG_SYSTEM_ALLIANCE" or event == "CHAT_MSG_BG_SYSTEM_HORDE" or event == "CHAT_MSG_MONSTER_YELL") then
 		local message = select(1, ...)
 		local zone = GetZoneText()
 		local messageFaction = self.factionmatch[event]
+		local sender = select(2,...)
+		if event == "CHAT_MSG_MONSTER_YELL" and sender ~= "Herald" then
+			-- ignore this
+			return
+		elseif event == "CHAT_MSG_MONSTER_YELL" and sender == "Herald" then
+			if string.match(message, "Alliance") then
+				messageFaction = "Alliance"
+			elseif string.match(message, "Horde") then
+				messageFaction = "Horde"
+			end
+		end
 		local faction = UnitFactionGroup("Player")
 
-		local assault = strfind(message,"has assaulted")
-		local attack = strfind(message, "is under attack")
-		local taken = strfind(message,"has taken")
-		local defended = strfind(message,"has defended")
+		local assault = strfind(string.lower(message),"has assaulted")
+		local attack = strfind(string.lower(message), "is under attack")
+		local taken = strfind(string.lower(message),"has taken")
+		local defended = strfind(string.lower(message),"has defended")
 		-- local claim = strfind(message,"claims the")
 
 		if self.graveyardmatch[zone] then 
@@ -160,8 +171,7 @@ function ClassicResTimer.OnEvent(self, event, ...)
 					if (taken or defended) and messageFaction == faction  then
 						-- print("Graveyard capped, starting timer for " .. subzone)
 						self.timeleft[subzone] = (self.ResInterval + 2.0)
-					end
-					if (assault or attack) and messageFaction ~= faction and self.timeleft[subzone] then
+					elseif (assault or attack) and messageFaction ~= faction and self.timeleft[subzone] then
 						-- print("Graveyard lost, removing timer for " .. subzone)
 						self.timeleft[subzone] = nil
 						self.lastlost[subzone] = GetTime()
@@ -199,7 +209,7 @@ function ClassicResTimer.Reset(self)
 		self.timeleft = { }
 		self.lastlost = { }
 		self.reporting = { }
-		--self.lastdead = { }
+		self.lastdead = 0
 		--self.lastzone = { }
 		local faction = UnitFactionGroup("Player")
 		for k, v in pairs(self.initialgraveyards[zone][faction]) do
@@ -257,6 +267,7 @@ ClassicResTimer:RegisterEvent('CHAT_MSG_ADDON')
 ClassicResTimer:RegisterEvent('CHAT_MSG_BG_SYSTEM_NEUTRAL')
 ClassicResTimer:RegisterEvent('CHAT_MSG_BG_SYSTEM_ALLIANCE')
 ClassicResTimer:RegisterEvent('CHAT_MSG_BG_SYSTEM_HORDE')
+ClassicResTimer:RegisterEvent('CHAT_MSG_MONSTER_YELL')
 ClassicResTimer:RegisterEvent('ZONE_CHANGED_NEW_AREA')
 ClassicResTimer:RegisterEvent('ADDON_LOADED')
 
@@ -268,7 +279,7 @@ ClassicResTimer.UpdateInterval = 0.5
 ClassicResTimer.maxres = 30
 
 ClassicResTimer.defaultpos = {
-	["Alterac Valley"] = {['x'] = 0, ['y'] = 0},
+	["Alterac Valley"] = {['x'] = 0, ['y'] = -10},
 	["Warsong Gulch"] = {['x'] = 0, ['y'] = -65},
 	["Arathi Basin"] = {['x'] = 0, ['y'] = -65},
 }
@@ -295,7 +306,7 @@ ClassicResTimer.graveyardmatch = {
 	["Alterac Valley"] = {
 		["Stonehearth Graveyard"] = "Stonehearth Graveyard",
 		["Stormpike Graveyard"] = "Stormpike Graveyard",
-		["Snowfall graveyard"] = "Snowfall Graveyard",
+		["Snowfall Graveyard"] = "Snowfall Graveyard",
 		["Stormpike Aid Station"] = "Dun Baldar",
 		["Iceblood Graveyard"] = "Iceblood Graveyard",
 		["Frostwolf Graveyard"] = "Frostwolf Graveyard",
