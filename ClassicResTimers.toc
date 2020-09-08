@@ -1,0 +1,4 @@
+## Interface: 11305
+## Title: ClassicResTimers
+## Notes: Displays Res Timers in BG's
+ClassicResTimers.lua
