@@ -158,20 +158,17 @@ function ClassicResTimer.OnEvent(self, event, ...)
 		end
 		local faction = UnitFactionGroup("Player")
 
-		local assault = strfind(string.lower(message),"has assaulted")
-		local attack = strfind(string.lower(message), "is under attack")
-		local taken = strfind(string.lower(message),"has taken")
-		local defended = strfind(string.lower(message),"has defended")
-		-- local claim = strfind(message,"claims the")
+		local lost = strfind(string.lower(message),"has assaulted") or strfind(string.lower(message), "is under attack")
+		local taken = strfind(string.lower(message),"has taken") or strfind(string.lower(message),"was taken") or strfind(string.lower(message),"has defended")
 
 		if self.graveyardmatch[zone] then 
 			for k, v in pairs(self.graveyardmatch[zone]) do
 				if strfind(string.lower(message), string.lower(k)) then
 					local subzone = self.graveyardmatch[zone][k]
-					if (taken or defended) and messageFaction == faction  then
+					if taken and messageFaction == faction  then
 						-- print("Graveyard capped, starting timer for " .. subzone)
 						self.timeleft[subzone] = (self.ResInterval + 2.0)
-					elseif (assault or attack) and messageFaction ~= faction and self.timeleft[subzone] then
+					elseif lost and messageFaction ~= faction and self.timeleft[subzone] then
 						-- print("Graveyard lost, removing timer for " .. subzone)
 						self.timeleft[subzone] = nil
 						self.lastlost[subzone] = GetTime()
@@ -186,7 +183,7 @@ function ClassicResTimer.OnEvent(self, event, ...)
 	
 	elseif event == "ADDON_LOADED" then
 		local message = select(1, ...)
-		if message == "ClassicResTimer" then
+		if message == "ClassicResTimers" then
 			self.Reset(self)
 		end
 	end
