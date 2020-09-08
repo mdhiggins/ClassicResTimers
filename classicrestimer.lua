@@ -279,7 +279,7 @@ ClassicResTimer.UpdateInterval = 0.5
 ClassicResTimer.maxres = 30
 
 ClassicResTimer.defaultpos = {
-	["Alterac Valley"] = {['x'] = 0, ['y'] = -10},
+	["Alterac Valley"] = {['x'] = 0, ['y'] = -5},
 	["Warsong Gulch"] = {['x'] = 0, ['y'] = -65},
 	["Arathi Basin"] = {['x'] = 0, ['y'] = -65},
 }
